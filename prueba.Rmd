@@ -5,12 +5,12 @@ date: "26 de mayo de 2018"
 output: html_document
 ---
 
-#Descargar datos 
+# Descargar datos 
 
 fname <- "http://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE49712&format=file&file=GSE49712_HTSeq.txt.gz"
 download.file(fname, destfile = "GSE49712_HTSeq.txt.gz")
 
-#Descargar librerias
+# Descargar librerias
 source("http://bioconductor.org/biocLite.R")
 biocLite("edgeR", dependencies = TRUE)
 
@@ -18,24 +18,24 @@ biocLite("edgeR", dependencies = TRUE)
 source("https://bioconductor.org/biocLite.R")
 biocLite("limma")
 
-#Cargar libreria
+# Cargar libreria
 library("edgeR")
 library("limma")
 
 getwd()
 
-#Leer datos descaragdos y revisarlos
+# Leer datos descaragdos y revisarlos
 data_raw <- read.table("GSE49712_HTSeq.txt.gz", header = TRUE)
 
 dim(data_raw)
 head(data_raw)
 tail(data_raw)
 
-#Remover las ultimas 5 lineas del archivo que contiene el resumen estadistico
+# Remover las ultimas 5 lineas del archivo que contiene el resumen estadistico
 
 data_clean <- data_raw[1:(nrow(data_raw) - 5), ]
 
-#Remover genes poco expresados o no expresados usando cpm (counts por million)
+# Remover genes poco expresados o no expresados usando cpm (counts por million)
 
 cpm_log <- cpm(data_clean, log = TRUE)
 median_log2_cpm <- apply(cpm_log, 1, median)
@@ -45,74 +45,74 @@ abline(v = expr_cutoff, col = "red", lwd = 3)
 sum(median_log2_cpm > expr_cutoff)
 data_clean <- data_clean [median_log2_cpm > expr_cutoff, ]
 
-#Después de filtrar recalculamos log2 cpm
+# Después de filtrar recalculamos log2 cpm
 
 cpm_log <- cpm(data_clean, log = TRUE)
 
-#heatmap de matriz de corelación 
+# heatmap de matriz de corelación 
 
 heatmap(cor(cpm_log))
 
-#PCA para ver relaciones entre las muestras
+# PCA para ver relaciones entre las muestras
 
 pca <- prcomp(t(cpm_log), scale. = TRUE)
 plot(pca$x[, 1], pca$x[, 2], pch = ".", xlab = "PC1", ylab = "PC2")
 text(pca$x[, 1], pca$x[, 2], labels = colnames(cpm_log))
 summary(pca)
 
-#Prueba de expresión diferencial
+# Prueba de expresión diferencial
 
 group <- substr(colnames(data_clean), 1, 1)
 group
 y <- DGEList(counts = data_clean, group = group)
 y
 
-#Normalización del conteo de genes usando el método TMM 
+# Normalización del conteo de genes usando el método TMM 
 
 y <- calcNormFactors(y)
 y$samples
 
-#Modelar la varianza del conteo de lecturas por gen
+# Modelar la varianza del conteo de lecturas por gen
 
 y <- estimateDisp(y)
 sqrt(y$common.dispersion) # biological coefficient of variation
 plotBCV(y)
 
 
-#Prueba de expresión diferncial entre dos clases usando un método Fisher's Exact Test
+# Prueba de expresión diferncial entre dos clases usando un método Fisher's Exact Test
 
 et <- exactTest(y)
 results_edgeR <- topTags(et, n = nrow(data_clean), sort.by = "none")
 head(results_edgeR$table)
 
-#Cuántos genes estan diferencialemente expresados en un FDR de 10%?
+# Cuántos genes estan diferencialemente expresados en un FDR de 10%?
 
 sum(results_edgeR$table$FDR < .1)
 plotSmear(et, de.tags = rownames(results_edgeR)[results_edgeR$table$FDR < .1])
 abline(h = c(-2, 2), col = "blue")
 
-#Prueba con más de dos grupos de comparación 
+# Prueba con más de dos grupos de comparación 
 
 set.seed(123)
 batch <- sample(c("one", "two"), 10, replace = TRUE)
 rin <- sample(6:10, 10, replace = TRUE)
 
 
-#Creamos una matriz para describir el modelo estadistico
+# Creamos una matriz para describir el modelo estadistico
 
 y <- DGEList(data_clean)
 y <- calcNormFactors(y)
 design <- model.matrix(~group + batch + rin)
 design
 
-#Prueba.
+# Prueba.
 
 y <- estimateDisp(y, design)
 fit <- glmFit(y, design)
 lrt <- glmLRT(fit, coef = 2)
 topTags(lrt)
 
-#Boxplot.
+# Boxplot.
 
 boxplot(as.numeric(data_clean["HBB", ]) ~ group)
 
