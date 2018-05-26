@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "edgeR"
 author: "Isaura Rosas-Reinhold"
 date: "26 de mayo de 2018"
 output:
