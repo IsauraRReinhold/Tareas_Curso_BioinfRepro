@@ -40,7 +40,7 @@ library("limma")
 getwd()
 ```
 
-### Leer datos descaragdos y revisarlos
+### Leer datos descargados y revisarlos
 ```{r}
 data_raw <- read.table("GSE49712_HTSeq.txt.gz", header = TRUE)
 
